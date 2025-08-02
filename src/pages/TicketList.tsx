@@ -196,14 +196,14 @@ export default function TicketList() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tickets</h1>
-          <p className="text-muted-foreground mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Tickets</h1>
+          <p className="text-muted-foreground">
             {profile?.role === 'end_user' ? 'Your support tickets' : 'Manage support tickets'}
           </p>
         </div>
-        <Button asChild className="mt-4 sm:mt-0">
+        <Button asChild className="w-full sm:w-auto">
           <Link to="/tickets/create">
             <Plus className="h-4 w-4 mr-2" />
             Create Ticket
@@ -212,9 +212,9 @@ export default function TicketList() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter & Search</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Filter & Search</CardTitle>
         </CardHeader>
         <CardContent>
           <TicketFilters
@@ -237,17 +237,24 @@ export default function TicketList() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading tickets...</p>
+            </div>
           </div>
         ) : tickets.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <div className="text-muted-foreground">
-                <Plus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">No tickets found</p>
-                <p className="mb-4">Try adjusting your filters or create a new ticket.</p>
-                <Button asChild>
+          <Card className="shadow-sm">
+            <CardContent className="text-center py-12">
+              <div className="text-muted-foreground space-y-4">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-muted/30">
+                  <Plus className="h-8 w-8 opacity-50" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">No tickets found</p>
+                  <p className="text-sm">Try adjusting your filters or create a new ticket.</p>
+                </div>
+                <Button asChild className="mt-4">
                   <Link to="/tickets/create">Create New Ticket</Link>
                 </Button>
               </div>
@@ -263,12 +270,40 @@ export default function TicketList() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+              <div className="flex justify-center pt-4">
+                <nav className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Next
+                  </Button>
+                </nav>
               </div>
             )}
           </>

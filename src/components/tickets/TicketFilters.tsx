@@ -67,33 +67,36 @@ export default function TicketFilters({
   return (
     <div className="space-y-4">
       {/* Search and Quick Actions */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search tickets..."
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10"
           />
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {showMyTicketsOnly !== undefined && (
             <Button
               variant={showMyTicketsOnly ? "default" : "outline"}
               onClick={() => onMyTicketsOnlyChange?.(!showMyTicketsOnly)}
               size="sm"
+              className="h-10"
             >
-              My Tickets Only
+              <span className="hidden sm:inline">My Tickets Only</span>
+              <span className="sm:hidden">My Tickets</span>
             </Button>
           )}
           
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="relative">
+              <Button variant="outline" size="sm" className="relative h-10">
                 <Filter className="h-4 w-4 mr-2" />
-                Filters
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
                 {activeFilterCount > 0 && (
                   <Badge className="ml-2 px-1 py-0 text-xs">
                     {activeFilterCount}
@@ -101,7 +104,7 @@ export default function TicketFilters({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
+            <PopoverContent className="w-80 max-w-[90vw]" align="end">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Filters</h4>
@@ -116,11 +119,11 @@ export default function TicketFilters({
                   )}
                 </div>
 
-                <div className="grid gap-3">
-                  <div>
-                    <Label>Status</Label>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Status</Label>
                     <Select value={filters.status} onValueChange={(value) => updateFilter('status', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
@@ -133,10 +136,10 @@ export default function TicketFilters({
                     </Select>
                   </div>
 
-                  <div>
-                    <Label>Priority</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Priority</Label>
                     <Select value={filters.priority} onValueChange={(value) => updateFilter('priority', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue placeholder="All priorities" />
                       </SelectTrigger>
                       <SelectContent>
@@ -150,10 +153,10 @@ export default function TicketFilters({
                   </div>
 
                   {categories.length > 0 && (
-                    <div>
-                      <Label>Category</Label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Category</Label>
                       <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10">
                           <SelectValue placeholder="All categories" />
                         </SelectTrigger>
                         <SelectContent>
@@ -169,10 +172,10 @@ export default function TicketFilters({
                   )}
 
                   {agents.length > 0 && (
-                    <div>
-                      <Label>Assigned To</Label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Assigned To</Label>
                       <Select value={filters.assignedTo} onValueChange={(value) => updateFilter('assignedTo', value)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10">
                           <SelectValue placeholder="All agents" />
                         </SelectTrigger>
                         <SelectContent>
@@ -188,10 +191,10 @@ export default function TicketFilters({
                     </div>
                   )}
 
-                  <div>
-                    <Label>Sort By</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Sort By</Label>
                     <Select value={filters.sortBy} onValueChange={(value) => updateFilter('sortBy', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -204,10 +207,10 @@ export default function TicketFilters({
                     </Select>
                   </div>
 
-                  <div>
-                    <Label>Sort Order</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Sort Order</Label>
                     <Select value={filters.sortOrder} onValueChange={(value) => updateFilter('sortOrder', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

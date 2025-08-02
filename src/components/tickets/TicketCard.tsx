@@ -63,16 +63,16 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
   const priority = priorityConfig[ticket.priority];
 
   return (
-    <Card className="hover:shadow-md transition-smooth">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+    <Card className="hover:shadow-lg transition-all duration-200 shadow-sm">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <Link 
             to={`/tickets/${ticket.id}`}
-            className="text-lg font-semibold hover:text-primary transition-smooth line-clamp-2"
+            className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2 flex-1"
           >
             {ticket.title}
           </Link>
-          <div className="flex items-center space-x-2 ml-4">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="status" className={`${status.color} text-white`}>
               {status.label}
             </Badge>
@@ -82,32 +82,33 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
           </div>
         </div>
         
-        <p className="text-muted-foreground text-sm line-clamp-2 mt-2">
+        <p className="text-muted-foreground text-sm line-clamp-2 mt-3 leading-relaxed">
           {ticket.description}
         </p>
       </CardHeader>
 
-      <CardContent className="py-3">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <User className="h-4 w-4" />
-              <span>{ticket.creator.full_name}</span>
+      <CardContent className="py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 flex-shrink-0" />
+              <span className="font-medium">{ticket.creator.full_name}</span>
             </div>
             
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 flex-shrink-0" />
               <span>{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
             </div>
 
             {ticket.assigned_agent && (
-              <div className="flex items-center space-x-1">
-                <Avatar className="h-5 w-5">
-                  <AvatarFallback className="text-xs">
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-5 w-5 flex-shrink-0">
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
                     {ticket.assigned_agent.full_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span>Assigned to {ticket.assigned_agent.full_name}</span>
+                <span className="hidden sm:inline">Assigned to {ticket.assigned_agent.full_name}</span>
+                <span className="sm:hidden">{ticket.assigned_agent.full_name}</span>
               </div>
             )}
           </div>
@@ -116,13 +117,14 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
             <Badge 
               variant="status" 
               style={{ backgroundColor: `${ticket.category.color}20`, borderColor: ticket.category.color }}
+              className="self-start sm:self-center"
             >
               {ticket.category.name}
             </Badge>
           ) : (
             <Badge 
               variant="status" 
-              className="bg-gray-100 text-gray-600 border-gray-300"
+              className="bg-gray-100 text-gray-600 border-gray-300 self-start sm:self-center"
             >
               No Category
             </Badge>
@@ -130,9 +132,9 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
         </div>
       </CardContent>
 
-      <CardFooter className="pt-3 border-t">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+      <CardFooter className="pt-4 border-t">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             {ticket.comment_count !== undefined && (
               <div className="flex items-center space-x-1">
                 <MessageSquare className="h-4 w-4" />
@@ -143,12 +145,13 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
             {ticket.has_attachments && (
               <div className="flex items-center space-x-1">
                 <Paperclip className="h-4 w-4" />
-                <span>Attachments</span>
+                <span className="hidden sm:inline">Attachments</span>
+                <span className="sm:hidden">Files</span>
               </div>
             )}
 
             {ticket.upvotes !== undefined && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-1">
                   <ThumbsUp className="h-4 w-4 text-green-600" />
                   <span>{ticket.upvotes}</span>
@@ -163,13 +166,14 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
             {ticket.updated_at !== ticket.created_at && (
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
+                <span className="hidden sm:inline">Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}</span>
+                <span className="sm:hidden">Updated</span>
               </div>
             )}
           </div>
 
           {showActions && (
-            <Button asChild size="sm" variant="outline">
+            <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
               <Link to={`/tickets/${ticket.id}`}>
                 View Details
               </Link>

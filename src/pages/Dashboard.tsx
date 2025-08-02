@@ -162,9 +162,9 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i} className="animate-pulse shadow-sm">
               <CardContent className="p-6">
                 <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
                 <div className="h-8 bg-muted rounded w-1/2"></div>
@@ -179,14 +179,14 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
             Welcome back, {profile?.full_name}!
           </p>
         </div>
-        <Button asChild className="mt-4 sm:mt-0">
+        <Button asChild className="w-full sm:w-auto">
           <Link to="/tickets/create">
             <Plus className="h-4 w-4 mr-2" />
             Create Ticket
@@ -195,12 +195,12 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {getStatCards().map((card, index) => (
-          <Card key={index} className="hover:shadow-md transition-smooth">
+          <Card key={index} className="hover:shadow-md transition-all duration-200 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">
                     {card.title}
                   </p>
@@ -215,27 +215,28 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover:shadow-md transition-smooth">
-          <CardHeader>
+      {/* Quick Actions and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
             <CardTitle className="text-lg">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button asChild className="w-full justify-start">
+            <Button asChild className="w-full justify-start h-10">
               <Link to="/tickets/create">
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Ticket
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
+            <Button asChild variant="outline" className="w-full justify-start h-10">
               <Link to="/tickets">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 View All Tickets
               </Link>
             </Button>
             {profile?.role !== 'end_user' && (
-              <Button asChild variant="outline" className="w-full justify-start">
+              <Button asChild variant="outline" className="w-full justify-start h-10">
                 <Link to="/tickets?status=open">
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Open Tickets
@@ -246,8 +247,8 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
             <CardTitle className="text-lg">Recent Tickets</CardTitle>
             <Button asChild variant="outline" size="sm">
               <Link to="/tickets">View All</Link>
@@ -256,36 +257,40 @@ export default function Dashboard() {
           <CardContent>
             {recentTickets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <TicketIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No tickets found</p>
-                <Button asChild className="mt-4" size="sm">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-muted/30 mb-4">
+                  <TicketIcon className="h-8 w-8 opacity-50" />
+                </div>
+                <p className="font-medium mb-2">No tickets found</p>
+                <Button asChild size="sm">
                   <Link to="/tickets/create">Create your first ticket</Link>
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentTickets.slice(0, 3).map((ticket) => (
-                  <div key={ticket.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-smooth">
-                    <div className="flex-1">
+                  <div key={ticket.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-accent/50 transition-all duration-200">
+                    <div className="flex-1 min-w-0 mb-3 sm:mb-0">
                       <Link 
                         to={`/tickets/${ticket.id}`}
-                        className="font-medium hover:text-primary transition-smooth line-clamp-1"
+                        className="font-medium hover:text-primary transition-colors line-clamp-1 block"
                       >
                         {ticket.title}
                       </Link>
-                      <div className="flex items-center space-x-2 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
                         <Badge variant="outline" className="text-xs">
                           {ticket.status.replace('_', ' ')}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
                           {ticket.priority}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {ticket.categories?.name}
-                        </span>
+                        {ticket.categories?.name && (
+                          <span className="text-xs text-muted-foreground">
+                            {ticket.categories.name}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <Button asChild size="sm" variant="ghost">
+                    <Button asChild size="sm" variant="ghost" className="self-start sm:self-center">
                       <Link to={`/tickets/${ticket.id}`}>View</Link>
                     </Button>
                   </div>
@@ -298,19 +303,19 @@ export default function Dashboard() {
 
       {/* Role-specific sections */}
       {profile?.role === 'admin' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-4">
               <CardTitle className="text-lg">Admin Quick Links</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button asChild variant="outline" className="w-full justify-start">
+              <Button asChild variant="outline" className="w-full justify-start h-10">
                 <Link to="/admin/users">
                   <Users className="h-4 w-4 mr-2" />
                   Manage Users
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
+              <Button asChild variant="outline" className="w-full justify-start h-10">
                 <Link to="/admin/categories">
                   <TicketIcon className="h-4 w-4 mr-2" />
                   Manage Categories

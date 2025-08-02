@@ -500,19 +500,25 @@ export default function TicketDetail() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header with back button */}
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={() => navigate('/tickets')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Tickets
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/tickets')}
+          className="flex items-center space-x-2 hover:bg-accent"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Back to Tickets</span>
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl">{ticket.title}</CardTitle>
-              <div className="flex items-center space-x-2">
+      {/* Main Ticket Card */}
+      <Card className="shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="space-y-3">
+              <CardTitle className="text-xl sm:text-2xl leading-tight">{ticket.title}</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="status" className={getStatusColor(ticket.status)}>
                   {ticket.status.replace('_', ' ')}
                 </Badge>
@@ -536,51 +542,57 @@ export default function TicketDetail() {
                 variant="outline"
                 size="sm"
                 onClick={handleShareTicket}
-                className="ml-4"
+                className="self-start"
               >
                 <Share2 className="h-4 w-4 mr-2" />
-                Share Ticket
+                <span className="hidden sm:inline">Share Ticket</span>
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          {/* Ticket Metadata */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-muted-foreground" />
+              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">Created by:</span>
-              <span>{ticket.profiles?.full_name || 'Unknown'}</span>
+              <span className="font-medium">{ticket.profiles?.full_name || 'Unknown'}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">Created:</span>
-              <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+              <span className="font-medium">{new Date(ticket.created_at).toLocaleDateString()}</span>
             </div>
             {ticket.assigned_profiles && (
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center space-x-2 sm:col-span-2">
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">Assigned to:</span>
-                <span>{ticket.assigned_profiles.full_name}</span>
+                <span className="font-medium">{ticket.assigned_profiles.full_name}</span>
               </div>
             )}
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold">Description</h3>
-            <p className="text-muted-foreground whitespace-pre-wrap">{ticket.description}</p>
+          {/* Description */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-lg">Description</h3>
+            <div className="bg-muted/30 rounded-lg p-4">
+              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{ticket.description}</p>
+            </div>
           </div>
 
           {/* Attachments Section */}
           {ticket.ticket_attachments && ticket.ticket_attachments.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-semibold">Attachments ({ticket.ticket_attachments.length})</h3>
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Attachments ({ticket.ticket_attachments.length})</h3>
+              <div className="space-y-3">
                 {ticket.ticket_attachments.map((attachment) => (
-                  <div key={attachment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">{attachment.file_name}</p>
+                  <div key={attachment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg bg-card">
+                    <div className="flex items-center space-x-3 mb-3 sm:mb-0">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{attachment.file_name}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatFileSize(attachment.file_size)} • {attachment.file_type}
                         </p>
@@ -590,8 +602,9 @@ export default function TicketDetail() {
                       variant="outline"
                       size="sm"
                       onClick={() => window.open(getDownloadUrl(attachment.file_path), '_blank')}
+                      className="self-start sm:self-center"
                     >
-                      <Download className="h-4 w-4 mr-1" />
+                      <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
                   </div>
@@ -601,20 +614,21 @@ export default function TicketDetail() {
           )}
           
           {/* Debug info - remove this later */}
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
             Debug: Ticket ID: {ticket.id}, Attachments: {ticket.ticket_attachments?.length || 0}
           </div>
 
           {/* Voting Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 pt-4 border-t">
             <div className="flex items-center space-x-2">
               <Button
                 variant={userVote === 'upvote' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleVote('upvote')}
                 disabled={!profile}
+                className="h-9 px-3"
               >
-                <ThumbsUp className="h-4 w-4 mr-1" />
+                <ThumbsUp className="h-4 w-4 mr-2" />
                 {voteCounts.upvotes}
               </Button>
               <Button
@@ -622,8 +636,9 @@ export default function TicketDetail() {
                 size="sm"
                 onClick={() => handleVote('downvote')}
                 disabled={!profile}
+                className="h-9 px-3"
               >
-                <ThumbsDown className="h-4 w-4 mr-1" />
+                <ThumbsDown className="h-4 w-4 mr-2" />
                 {voteCounts.downvotes}
               </Button>
             </div>
@@ -631,15 +646,15 @@ export default function TicketDetail() {
 
           {/* Agent Controls - Only for support agents and admins */}
           {profile && ['support_agent', 'admin'].includes(profile.role) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t">
               <div className="space-y-2">
-                <Label>Update Status</Label>
+                <Label className="text-sm font-medium">Update Status</Label>
                 <Select
                   value={ticket.status}
                   onValueChange={handleStatusUpdate}
                   disabled={updatingStatus}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -652,13 +667,13 @@ export default function TicketDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label>Assign Agent</Label>
+                <Label className="text-sm font-medium">Assign Agent</Label>
                 <Select
                   value={ticket.assigned_agent_id || 'unassigned'}
                   onValueChange={handleAgentAssignment}
                   disabled={assigningAgent}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="Unassigned" />
                   </SelectTrigger>
                   <SelectContent>
@@ -677,38 +692,65 @@ export default function TicketDetail() {
       </Card>
 
       {/* Comments Section */}
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <MessageSquare className="h-5 w-5" />
             <span>Comments ({comments.length})</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="border-b pb-4 last:border-b-0">
-              <div className="flex items-start justify-between mb-2">
-                <span className="font-medium">{comment.profiles?.full_name || 'Unknown'}</span>
-                <span className="text-sm text-muted-foreground">
-                  {new Date(comment.created_at).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-muted-foreground">{comment.content}</p>
+        <CardContent className="space-y-6">
+          {comments.length > 0 ? (
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="border-b pb-4 last:border-b-0">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                    <span className="font-medium text-sm">{comment.profiles?.full_name || 'Unknown'}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(comment.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground leading-relaxed">{comment.content}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="text-center py-8">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+            </div>
+          )}
 
           {/* Only show comment form for ticket creator or agents/admins */}
           {(profile?.id === ticket.creator_id || 
             (profile && ['support_agent', 'admin'].includes(profile.role))) && (
-            <form onSubmit={handleAddComment} className="space-y-2">
-              <Textarea
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-              />
-              <Button type="submit" disabled={!newComment.trim() || submitting}>
-                {submitting ? 'Adding...' : 'Add Comment'}
+            <form onSubmit={handleAddComment} className="space-y-3 pt-4 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="comment" className="text-sm font-medium">Add a comment</Label>
+                <Textarea
+                  id="comment"
+                  placeholder="Type your comment here..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                disabled={!newComment.trim() || submitting}
+                className="w-full sm:w-auto"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add Comment'
+                )}
               </Button>
             </form>
           )}
@@ -717,7 +759,7 @@ export default function TicketDetail() {
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>Share Ticket</CardTitle>
@@ -749,9 +791,9 @@ export default function TicketDetail() {
                 </div>
               </div>
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground space-y-2">
                 <p>Share this link with the ticket creator or assigned support agent.</p>
-                <p className="mt-1">
+                <p className="text-xs">
                   <strong>Security Note:</strong> Only the ticket creator, assigned agent, and admins can access this ticket.
                 </p>
               </div>
