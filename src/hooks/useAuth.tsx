@@ -36,22 +36,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Fetch user profile
           setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            setProfile(profileData);
-            setLoading(false);
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error('Error fetching profile:', error);
+              } else {
+                console.log('Profile loaded:', profileData);
+                setProfile(profileData);
+              }
+            } catch (error) {
+              console.error('Error in profile fetch:', error);
+            } finally {
+              setLoading(false);
+            }
           }, 0);
         } else {
+          console.log('No session, clearing profile');
           setProfile(null);
           setLoading(false);
         }
@@ -59,7 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      }
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
@@ -71,89 +87,115 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-    }
 
-    return { error };
+      if (error) {
+        console.error('Sign in error:', error);
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Sign in successful');
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('Sign in exception:', error);
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        }
-      }
-    });
-
-    if (error) {
-      toast({
-        title: "Registration Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      // Send welcome email
-      await sendWelcomeEmail(email, fullName);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
       
-      toast({
-        title: "Registration Successful",
-        description: "Please check your email to verify your account.",
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+          }
+        }
       });
-    }
 
-    return { error };
+      if (error) {
+        console.error('Sign up error:', error);
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Sign up successful');
+        // Send welcome email
+        await sendWelcomeEmail(email, fullName);
+        
+        toast({
+          title: "Registration Successful",
+          description: "Please check your email to verify your account.",
+        });
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('Sign up exception:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    toast({
-      title: "Signed Out",
-      description: "You have been successfully signed out.",
-    });
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      console.log('Sign out successful');
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: new Error('No user logged in') };
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', user.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
 
-    if (error) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
-      });
+      if (error) {
+        console.error('Profile update error:', error);
+        toast({
+          title: "Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been updated successfully.",
+        });
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('Profile update exception:', error);
+      return { error };
     }
-
-    return { error };
   };
 
   return (
