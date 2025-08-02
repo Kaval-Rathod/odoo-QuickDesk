@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Create categories table
 CREATE TABLE IF NOT EXISTS public.categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT,
     color TEXT DEFAULT '#3B82F6',
     is_active BOOLEAN DEFAULT true,
@@ -82,7 +82,7 @@ INSERT INTO public.categories (name, description, color) VALUES
 ('Bug Report', 'Reports of bugs or issues', '#F59E0B'),
 ('Account Issues', 'Account-related problems', '#8B5CF6'),
 ('Billing', 'Billing and payment questions', '#06B6D4')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 -- Create function to handle new user registration
 CREATE OR REPLACE FUNCTION public.handle_new_user()

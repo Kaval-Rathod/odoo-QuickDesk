@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Upload, X, FileText } from 'lucide-react';
+import { sendTicketNotification } from '@/lib/email-notifications';
 
 interface Category {
   id: string;
@@ -97,6 +98,48 @@ export default function CreateTicket() {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Check file type
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a supported file type`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
+    });
+
+    setAttachments(prev => [...prev, ...validFiles]);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -128,13 +171,74 @@ export default function CreateTicket() {
 
       if (ticketError) throw ticketError;
 
-      // Upload attachments if any (disabled for now)
+      // Upload attachments if any
       if (attachments.length > 0) {
-        toast({
-          title: "File Upload Disabled",
-          description: "File uploads are temporarily disabled. Your ticket was created successfully.",
-        });
+        const uploadedFiles = [];
+        
+        console.log('Starting file upload process for', attachments.length, 'files');
+        
+        for (const file of attachments) {
+          try {
+            console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
+            
+            const fileName = `${Date.now()}-${file.name}`;
+            const filePath = `tickets/${ticket.id}/${fileName}`;
+            
+            console.log('Uploading to path:', filePath);
+            
+            const { error: uploadError } = await supabase.storage
+              .from('attachments')
+              .upload(filePath, file);
+            
+            if (uploadError) {
+              console.error('Error uploading file:', uploadError);
+              continue;
+            }
+            
+            console.log('File uploaded successfully to storage');
+            
+            // Get public URL
+            const { data: urlData } = supabase.storage
+              .from('attachments')
+              .getPublicUrl(filePath);
+            
+            console.log('Public URL generated:', urlData.publicUrl);
+            
+            // Save file info to database
+            const { error: dbError } = await supabase
+              .from('ticket_attachments')
+              .insert({
+                ticket_id: ticket.id,
+                file_name: file.name,
+                file_path: filePath,
+                file_size: file.size,
+                file_type: file.type,
+                uploaded_by: profile.id
+              });
+            
+            if (dbError) {
+              console.error('Error saving file info to database:', dbError);
+            } else {
+              uploadedFiles.push(file.name);
+              console.log('File saved to database:', file.name, 'for ticket:', ticket.id);
+            }
+          } catch (error) {
+            console.error('Error processing file:', error);
+          }
+        }
+        
+        console.log('Upload process completed. Successfully uploaded:', uploadedFiles.length, 'files');
+        
+        if (uploadedFiles.length > 0) {
+          toast({
+            title: "Files Uploaded",
+            description: `Successfully uploaded ${uploadedFiles.length} file(s).`,
+          });
+        }
       }
+
+      // Send email notification
+      await sendTicketNotification(ticket.id, 'created');
 
       toast({
         title: "Ticket Created",
@@ -230,18 +334,62 @@ export default function CreateTicket() {
               />
             </div>
 
-            {/* File upload disabled for now */}
+            {/* File upload */}
             <div className="space-y-4">
               <Label>Attachments</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/20">
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <span className="text-sm text-muted-foreground">
-                  File uploads are temporarily disabled
-                </span>
-                <span className="text-xs text-muted-foreground block mt-1">
-                  This feature will be available soon
-                </span>
+              <div 
+                className="border-2 border-dashed border-border rounded-lg p-6"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <div className="text-center">
+                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <span className="text-sm text-muted-foreground">
+                      Click to upload files or drag and drop
+                    </span>
+                    <span className="text-xs text-muted-foreground block mt-1">
+                      Max 10MB per file. Supported: Images, PDF, DOC, TXT
+                    </span>
+                  </div>
+                </label>
               </div>
+              
+              {/* Display selected files */}
+              {attachments.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Selected Files ({attachments.length})</Label>
+                  <div className="space-y-2">
+                    {attachments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{file.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-4">

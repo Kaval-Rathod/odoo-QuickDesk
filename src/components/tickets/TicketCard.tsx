@@ -20,10 +20,10 @@ interface Ticket {
   description: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: {
+  category?: {
     name: string;
     color: string;
-  };
+  } | null;
   creator: {
     full_name: string;
     email: string;
@@ -112,12 +112,21 @@ export default function TicketCard({ ticket, showActions = true }: TicketCardPro
             )}
           </div>
 
-          <Badge 
-            variant="status" 
-            style={{ backgroundColor: `${ticket.category.color}20`, borderColor: ticket.category.color }}
-          >
-            {ticket.category.name}
-          </Badge>
+          {ticket.category ? (
+            <Badge 
+              variant="status" 
+              style={{ backgroundColor: `${ticket.category.color}20`, borderColor: ticket.category.color }}
+            >
+              {ticket.category.name}
+            </Badge>
+          ) : (
+            <Badge 
+              variant="status" 
+              className="bg-gray-100 text-gray-600 border-gray-300"
+            >
+              No Category
+            </Badge>
+          )}
         </div>
       </CardContent>
 

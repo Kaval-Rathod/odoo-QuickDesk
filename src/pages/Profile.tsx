@@ -48,7 +48,7 @@ export default function Profile() {
       const { error } = await updateProfile({
         full_name: formData.full_name.trim(),
         email: formData.email.trim(),
-        role: formData.role as 'end_user' | 'support_agent' | 'admin',
+        // Role is not included as users cannot change their own role
       });
 
       if (error) throw error;
@@ -179,16 +179,14 @@ export default function Profile() {
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="end_user">End User</SelectItem>
-                  <SelectItem value="support_agent">Support Agent</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2 p-3 border rounded-md bg-muted/50">
+                <Badge className={getRoleBadgeColor(formData.role)}>
+                  {formData.role?.replace('_', ' ') || 'User'}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  Role can only be changed by an administrator
+                </span>
+              </div>
             </div>
 
             <div className="pt-4">
@@ -209,8 +207,8 @@ export default function Profile() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>• Your role cannot be changed from this interface</p>
-            <p>• Contact an administrator to change your role</p>
+            <p>• Your role can only be changed by an administrator</p>
+            <p>• Contact an administrator to request a role change</p>
             <p>• Account deletion is not available in this version</p>
           </div>
         </CardContent>

@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { sendWelcomeEmail } from '@/lib/email-notifications';
 
 interface Profile {
   id: string;
@@ -107,6 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
     } else {
+      // Send welcome email
+      await sendWelcomeEmail(email, fullName);
+      
       toast({
         title: "Registration Successful",
         description: "Please check your email to verify your account.",

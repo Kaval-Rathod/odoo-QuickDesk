@@ -53,7 +53,7 @@ export default function AuthPage() {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center space-x-2">
             <HelpCircle className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-primary">
               QuickDesk
             </h1>
           </div>

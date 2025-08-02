@@ -119,7 +119,19 @@ export default function AdminCategories() {
           is_active: true,
         });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a unique constraint violation
+        if (error.code === '23505' && error.message.includes('categories_name_unique')) {
+          toast({
+            title: "Error",
+            description: "A category with this name already exists.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       toast({
         title: "Success",
@@ -201,11 +213,31 @@ export default function AdminCategories() {
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+    // Find the category to get its ticket count
+    const category = categories.find(c => c.id === categoryId);
+    const hasTickets = category?.ticket_count && category.ticket_count > 0;
+    
+    let confirmMessage = 'Are you sure you want to delete this category? This action cannot be undone.';
+    if (hasTickets) {
+      confirmMessage = `This category has ${category?.ticket_count} ticket(s) associated with it. Deleting it will remove the category from those tickets. Are you sure you want to continue?`;
+    }
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
 
     try {
+      // If category has tickets, first update those tickets to remove the category reference
+      if (hasTickets) {
+        const { error: updateError } = await supabase
+          .from('tickets')
+          .update({ category_id: null })
+          .eq('category_id', categoryId);
+
+        if (updateError) throw updateError;
+      }
+
+      // Now delete the category
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -215,7 +247,7 @@ export default function AdminCategories() {
 
       toast({
         title: "Success",
-        description: "Category deleted successfully.",
+        description: `Category deleted successfully.${hasTickets ? ` ${category?.ticket_count} ticket(s) have been updated.` : ''}`,
       });
 
       fetchCategories();
@@ -315,6 +347,11 @@ export default function AdminCategories() {
                         <Badge variant={category.is_active ? "default" : "secondary"}>
                           {category.is_active ? "Active" : "Inactive"}
                         </Badge>
+                        {category.ticket_count && category.ticket_count > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {category.ticket_count} ticket(s)
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">{category.description}</p>
                       <div className="flex items-center space-x-4 mt-1">
@@ -347,7 +384,6 @@ export default function AdminCategories() {
                     variant="outline"
                     size="sm"
                     onClick={() => deleteCategory(category.id)}
-                    disabled={category.ticket_count && category.ticket_count > 0}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

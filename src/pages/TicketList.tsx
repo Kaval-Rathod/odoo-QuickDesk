@@ -99,13 +99,18 @@ export default function TicketList() {
         `, { count: 'exact' });
 
       // Apply role-based filtering
-      if (profile.role === 'end_user' || showMyTicketsOnly) {
-        if (profile.role === 'end_user') {
+      if (profile.role === 'end_user') {
+        // End users can only see their own tickets
+        query = query.eq('creator_id', profile.id);
+      } else if (profile.role === 'support_agent') {
+        // Support agents can see tickets they're assigned to or created by them
+        if (showMyTicketsOnly) {
           query = query.eq('creator_id', profile.id);
-        } else if (showMyTicketsOnly) {
-          query = query.eq('creator_id', profile.id);
+        } else {
+          query = query.or(`creator_id.eq.${profile.id},assigned_agent_id.eq.${profile.id}`);
         }
       }
+      // Admins can see all tickets (no filtering needed)
 
       // Apply filters
       if (filters.search) {
@@ -151,8 +156,8 @@ export default function TicketList() {
         creator: ticket.profiles,
         assigned_agent: ticket.assigned_profiles,
         comment_count: ticket.ticket_comments?.length || 0,
-        upvotes: ticket.ticket_votes?.filter(v => v.vote_type === 'up').length || 0,
-        downvotes: ticket.ticket_votes?.filter(v => v.vote_type === 'down').length || 0,
+        upvotes: ticket.ticket_votes?.filter(v => v.vote_type === 'upvote').length || 0,
+        downvotes: ticket.ticket_votes?.filter(v => v.vote_type === 'downvote').length || 0,
         has_attachments: (ticket.attachments?.length || 0) > 0,
       }));
 

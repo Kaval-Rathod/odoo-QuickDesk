@@ -79,11 +79,21 @@ export default function AdminUsers() {
 
   const updateUserRole = async (userId: string, newRole: string) => {
     try {
-      // Validate role
-      if (!['end_user', 'support_agent', 'admin'].includes(newRole)) {
+      // Prevent admins from changing their own role
+      if (userId === profile?.id) {
         toast({
           title: "Error",
-          description: "Invalid role selected.",
+          description: "You cannot change your own role.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate role - only allow end_user and support_agent
+      if (!['end_user', 'support_agent'].includes(newRole)) {
+        toast({
+          title: "Error",
+          description: "Invalid role selected. Only End User and Support Agent roles are allowed.",
           variant: "destructive",
         });
         return;
@@ -309,9 +319,11 @@ export default function AdminUsers() {
                       <SelectContent>
                         <SelectItem value="end_user">End User</SelectItem>
                         <SelectItem value="support_agent">Support Agent</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
+                    {user.id === profile?.id && (
+                      <span className="text-xs text-muted-foreground">(You)</span>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
