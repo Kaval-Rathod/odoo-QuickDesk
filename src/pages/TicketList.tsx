@@ -25,10 +25,10 @@ export default function TicketList() {
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
-    priority: searchParams.get('priority') || '',
-    category: searchParams.get('category') || '',
-    assignedTo: searchParams.get('assignedTo') || '',
+    status: searchParams.get('status') || 'all',
+    priority: searchParams.get('priority') || 'all',
+    category: searchParams.get('category') || 'all',
+    assignedTo: searchParams.get('assignedTo') || 'all',
     sortBy: searchParams.get('sortBy') || 'created_at',
     sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
   });
@@ -48,7 +48,7 @@ export default function TicketList() {
     // Update URL params when filters change
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+      if (value && value !== 'all') params.set(key, value);
     });
     if (currentPage > 1) params.set('page', currentPage.toString());
     setSearchParams(params);
@@ -105,8 +105,10 @@ export default function TicketList() {
       } else if (profile.role === 'support_agent') {
         // Support agents can see tickets they're assigned to or created by them
         if (showMyTicketsOnly) {
-          query = query.eq('creator_id', profile.id);
+          // When "My Tickets" is clicked, show only tickets assigned to this agent
+          query = query.eq('assigned_agent_id', profile.id);
         } else {
+          // Show all tickets the agent can see (assigned to them or created by them)
           query = query.or(`creator_id.eq.${profile.id},assigned_agent_id.eq.${profile.id}`);
         }
       }
@@ -117,19 +119,19 @@ export default function TicketList() {
         query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
       }
 
-      if (filters.status) {
+      if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
       }
 
-      if (filters.priority) {
+      if (filters.priority && filters.priority !== 'all') {
         query = query.eq('priority', filters.priority);
       }
 
-      if (filters.category) {
+      if (filters.category && filters.category !== 'all') {
         query = query.eq('category_id', filters.category);
       }
 
-      if (filters.assignedTo) {
+      if (filters.assignedTo && filters.assignedTo !== 'all') {
         if (filters.assignedTo === 'unassigned') {
           query = query.is('assigned_agent_id', null);
         } else {
@@ -222,8 +224,8 @@ export default function TicketList() {
             onFiltersChange={handleFiltersChange}
             categories={categories}
             agents={agents}
-            showMyTicketsOnly={profile?.role !== 'end_user' ? showMyTicketsOnly : undefined}
-            onMyTicketsOnlyChange={profile?.role !== 'end_user' ? setShowMyTicketsOnly : undefined}
+            showMyTicketsOnly={profile?.role === 'support_agent' ? showMyTicketsOnly : undefined}
+            onMyTicketsOnlyChange={profile?.role === 'support_agent' ? setShowMyTicketsOnly : undefined}
           />
         </CardContent>
       </Card>
