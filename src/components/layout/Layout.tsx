@@ -13,15 +13,20 @@ interface LayoutProps {
 export default function Layout({ children, requireAuth = true, allowedRoles }: LayoutProps) {
   const { user, profile, loading } = useAuth();
 
+  // Show loading spinner while auth state is being determined
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  if (requireAuth && !user) {
+  // Only redirect to auth if we're sure there's no user and auth is required
+  if (requireAuth && !user && !loading) {
     return <Navigate to="/auth" replace />;
   }
 
