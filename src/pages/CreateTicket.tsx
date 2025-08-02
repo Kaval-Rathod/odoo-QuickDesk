@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Upload, X, FileText } from 'lucide-react';
 import { sendTicketNotification } from '@/lib/email-notifications';
+import { NotificationService } from '@/lib/notification-service';
 
 interface Category {
   id: string;
@@ -256,6 +257,13 @@ export default function CreateTicket() {
 
       // Send email notification
       await sendTicketNotification(ticket.id, 'created');
+
+      // Send in-app notification
+      await NotificationService.createTicketCreatedNotification(
+        ticket.id,
+        profile.id,
+        formData.title.trim()
+      );
 
       toast({
         title: "Ticket Created",

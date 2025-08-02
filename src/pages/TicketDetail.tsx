@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, MessageSquare, FileText, Clock, User, ThumbsUp, ThumbsDown, Loader2, Download, Share2, Copy, Check } from 'lucide-react';
 import { sendTicketNotification } from '@/lib/email-notifications';
+import { NotificationService } from '@/lib/notification-service';
 
 interface Ticket {
   id: string;
@@ -75,6 +76,8 @@ export default function TicketDetail() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string>('');
+  const [pendingAgent, setPendingAgent] = useState<string>('');
 
   useEffect(() => {
     if (id) {
@@ -82,9 +85,16 @@ export default function TicketDetail() {
       fetchComments();
       fetchAgents();
       fetchVotes();
-      fetchAttachments();
     }
   }, [id]);
+
+  // Initialize pending values when ticket loads
+  useEffect(() => {
+    if (ticket) {
+      setPendingStatus(ticket.status);
+      setPendingAgent(ticket.assigned_agent_id || 'unassigned');
+    }
+  }, [ticket]);
 
   const fetchTicket = async () => {
     try {
@@ -266,26 +276,35 @@ export default function TicketDetail() {
     }
   };
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!profile || !['support_agent', 'admin'].includes(profile.role)) return;
+  const handleStatusUpdate = async () => {
+    if (!profile || !['support_agent', 'admin'].includes(profile.role) || !pendingStatus) return;
 
     setUpdatingStatus(true);
     try {
       const { error } = await supabase
         .from('tickets')
-        .update({ status: newStatus })
+        .update({ status: pendingStatus })
         .eq('id', id);
 
       if (error) throw error;
 
       await fetchTicket();
       
-      // Send email notification for status change
-      await sendTicketNotification(id!, 'status_changed');
+      // Send notification for status change
+      if (ticket) {
+        await NotificationService.createTicketUpdatedNotification(
+          id!,
+          ticket.creator_id,
+          ticket.title,
+          'status',
+          ticket.status,
+          pendingStatus
+        );
+      }
       
       toast({
         title: "Status Updated",
-        description: `Ticket status changed to ${newStatus.replace('_', ' ')}.`,
+        description: `Ticket status changed to ${pendingStatus.replace('_', ' ')}.`,
       });
     } catch (error: any) {
       console.error('Error updating status:', error);
@@ -299,12 +318,12 @@ export default function TicketDetail() {
     }
   };
 
-  const handleAgentAssignment = async (agentId: string) => {
+  const handleAgentAssignment = async () => {
     if (!profile || !['support_agent', 'admin'].includes(profile.role)) return;
 
     setAssigningAgent(true);
     try {
-      const actualAgentId = agentId === 'unassigned' ? null : agentId;
+      const actualAgentId = pendingAgent === 'unassigned' ? null : pendingAgent;
       
       const { error } = await supabase
         .from('tickets')
@@ -315,9 +334,28 @@ export default function TicketDetail() {
 
       await fetchTicket();
       
-      // Send email notification for agent assignment
-      if (actualAgentId) {
-        await sendTicketNotification(id!, 'assigned');
+      // Send notification for agent assignment
+      if (ticket && actualAgentId) {
+        const assignedAgent = agents.find(a => a.id === actualAgentId);
+        if (assignedAgent) {
+          await NotificationService.createTicketAssignedNotification(
+            id!,
+            ticket.creator_id,
+            actualAgentId,
+            ticket.title,
+            assignedAgent.full_name
+          );
+        }
+      } else if (ticket) {
+        // Notification for removing assignment
+        await NotificationService.createTicketUpdatedNotification(
+          id!,
+          ticket.creator_id,
+          ticket.title,
+          'assignment',
+          ticket.assigned_profiles?.full_name || 'Assigned',
+          'Unassigned'
+        );
       }
       
       toast({
@@ -418,8 +456,16 @@ export default function TicketDetail() {
       setNewComment('');
       await fetchComments();
       
-      // Send email notification for new comment
-      await sendTicketNotification(id!, 'commented');
+      // Send notification for new comment
+      if (ticket) {
+        await NotificationService.createTicketCommentedNotification(
+          id!,
+          ticket.creator_id,
+          profile.id,
+          ticket.title,
+          profile.full_name || 'Unknown User'
+        );
+      }
       
       toast({
         title: "Comment Added",
@@ -647,44 +693,76 @@ export default function TicketDetail() {
           {/* Agent Controls - Only for support agents and admins */}
           {profile && ['support_agent', 'admin'].includes(profile.role) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Update Status</Label>
-                <Select
-                  value={ticket.status}
-                  onValueChange={handleStatusUpdate}
-                  disabled={updatingStatus}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Update Status</Label>
+                  <Select
+                    value={pendingStatus}
+                    onValueChange={setPendingStatus}
+                    disabled={updatingStatus}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleStatusUpdate}
+                  disabled={updatingStatus || pendingStatus === ticket?.status}
+                  className="w-full"
                 >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
+                  {updatingStatus ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Save Status'
+                  )}
+                </Button>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Assign Agent</Label>
-                <Select
-                  value={ticket.assigned_agent_id || 'unassigned'}
-                  onValueChange={handleAgentAssignment}
-                  disabled={assigningAgent}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Assign Agent</Label>
+                  <Select
+                    value={pendingAgent}
+                    onValueChange={setPendingAgent}
+                    disabled={assigningAgent}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {agents.map((agent) => (
+                        <SelectItem key={agent.id} value={agent.id}>
+                          {agent.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleAgentAssignment}
+                  disabled={assigningAgent || pendingAgent === (ticket?.assigned_agent_id || 'unassigned')}
+                  className="w-full"
                 >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Unassigned" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {assigningAgent ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Assigning...
+                    </>
+                  ) : (
+                    'Save Assignment'
+                  )}
+                </Button>
               </div>
             </div>
           )}
