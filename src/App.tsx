@@ -16,6 +16,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AdminCategories from "@/pages/AdminCategories";
 import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "./pages/NotFound";
+import AuthDebug from "@/components/debug/AuthDebug";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <AuthDebug />
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
