@@ -72,11 +72,13 @@ export default function CreateTicket() {
       
       // Check file type
       const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/gif',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
+        'text/plain',
+        'video/mp4', 'video/webm', 'video/ogg',
+        'audio/mpeg', 'audio/wav', 'audio/ogg'
       ];
       
       if (!allowedTypes.includes(file.type)) {
@@ -114,11 +116,13 @@ export default function CreateTicket() {
       
       // Check file type
       const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/gif',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
+        'text/plain',
+        'video/mp4', 'video/webm', 'video/ogg',
+        'audio/mpeg', 'audio/wav', 'audio/ogg'
       ];
       
       if (!allowedTypes.includes(file.type)) {
@@ -174,6 +178,7 @@ export default function CreateTicket() {
       // Upload attachments if any
       if (attachments.length > 0) {
         const uploadedFiles = [];
+        const failedFiles = [];
         
         console.log('Starting file upload process for', attachments.length, 'files');
         
@@ -192,6 +197,7 @@ export default function CreateTicket() {
             
             if (uploadError) {
               console.error('Error uploading file:', uploadError);
+              failedFiles.push({ name: file.name, error: uploadError.message });
               continue;
             }
             
@@ -218,21 +224,32 @@ export default function CreateTicket() {
             
             if (dbError) {
               console.error('Error saving file info to database:', dbError);
+              failedFiles.push({ name: file.name, error: dbError.message });
             } else {
               uploadedFiles.push(file.name);
               console.log('File saved to database:', file.name, 'for ticket:', ticket.id);
             }
-          } catch (error) {
+          } catch (error: any) {
             console.error('Error processing file:', error);
+            failedFiles.push({ name: file.name, error: error.message || 'Unknown error' });
           }
         }
         
         console.log('Upload process completed. Successfully uploaded:', uploadedFiles.length, 'files');
+        console.log('Failed uploads:', failedFiles.length, 'files');
         
         if (uploadedFiles.length > 0) {
           toast({
             title: "Files Uploaded",
             description: `Successfully uploaded ${uploadedFiles.length} file(s).`,
+          });
+        }
+        
+        if (failedFiles.length > 0) {
+          toast({
+            title: "Some Files Failed",
+            description: `${failedFiles.length} file(s) failed to upload. Check console for details.`,
+            variant: "destructive",
           });
         }
       }
@@ -348,7 +365,7 @@ export default function CreateTicket() {
                   onChange={handleFileUpload}
                   className="hidden"
                   id="file-upload"
-                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  accept="image/*,.pdf,.doc,.docx,.txt,.mp4,.webm,.ogg,.mp3,.wav"
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
                   <div className="text-center">
@@ -357,7 +374,7 @@ export default function CreateTicket() {
                       Click to upload files or drag and drop
                     </span>
                     <span className="text-xs text-muted-foreground block mt-1">
-                      Max 10MB per file. Supported: Images, PDF, DOC, TXT
+                      Max 10MB per file. Supported: Images, PDF, DOC, TXT, Video, Audio
                     </span>
                   </div>
                 </label>
