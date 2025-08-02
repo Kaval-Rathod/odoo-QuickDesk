@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -53,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (error) {
                 console.error('Error fetching profile:', error);
               } else {
-                console.log('Profile loaded:', profileData);
                 setProfile(profileData);
               }
             } catch (error) {
@@ -63,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }, 0);
         } else {
-          console.log('No session, clearing profile');
           setProfile(null);
           setLoading(false);
         }
@@ -75,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Error getting session:', error);
       }
-      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
@@ -100,8 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        console.log('Sign in successful');
       }
 
       return { error };
@@ -134,7 +128,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
         });
       } else {
-        console.log('Sign up successful');
         // Send welcome email
         await sendWelcomeEmail(email, fullName);
         
@@ -157,7 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setProfile(null);
       setSession(null);
-      console.log('Sign out successful');
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out.",

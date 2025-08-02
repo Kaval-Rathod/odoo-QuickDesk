@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import TicketCard from '@/components/tickets/TicketCard';
-import SessionDebug from '@/components/debug/SessionDebug';
 import {
   Plus,
   TicketIcon,
@@ -179,9 +178,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Session Debug - Remove this after testing */}
-      <SessionDebug />
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
